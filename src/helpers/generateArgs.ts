@@ -1,33 +1,32 @@
 import { Destructives, destructiveArgs } from "./utilities";
 import { returnError } from "../classes/Error";
 
-function isPrimitive(argType: string) {
-    // return ["string", "number", "boolean", "bigint", "symbol"].includes(argType);
-    // We would work on more types later
-    return ["string", "number", "boolean"].includes(argType);
-}
+// function isPrimitive(argType: string) {
+//     // return ["string", "number", "boolean", "bigint", "symbol"].includes(argType);
+//     // We would work on more types later
+//     return ["string", "number", "boolean"].includes(argType);
+// }
 
-function isValidNumber(
-    num: unknown,
-    shouldBeGreaterThan = 0,
-    shouldBeLessThan = Math.pow(2, 52)
-) {
-    return (
-        typeof num === "number" &&
-        num > shouldBeGreaterThan &&
-        num < shouldBeLessThan
-    );
-}
+// function isValidNumber(
+//     num: unknown,
+//     shouldBeGreaterThan = 0,
+//     shouldBeLessThan = Math.pow(2, 52)
+// ) {
+//     return (
+//         typeof num === "number" &&
+//         num > shouldBeGreaterThan &&
+//         num < shouldBeLessThan
+//     );
+// }
 
 export default function generateArgs(
     argType: unknown,
-    argExample?: unknown,
-    userDestructives: Partial<Destructives> = {}
+    argExample: unknown,
+    userDestructives: { [x: string]: unknown[] } = {}
 ) {
     //@ts-ignore
-    const destructives: Destructives = {};
+    const destructives: Destructives = { ...userDestructives };
     for (const prop in destructiveArgs) {
-        //@ts-ignore
         if (Array.isArray(userDestructives[prop])) {
             //@ts-ignore
             destructives[prop] = [].concat(
@@ -82,5 +81,6 @@ export default function generateArgs(
     } else {
         returnError(`Unknown type ${JSON.stringify(argType)} passed in.`);
     }
-    return destructiveArgsArr;
+    // We don't want duplicate args for union types :-)
+    return Array.from(new Set(destructiveArgsArr));
 }

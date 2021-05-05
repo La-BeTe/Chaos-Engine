@@ -4,7 +4,7 @@ import { Destructives } from "./helpers/utilities";
 interface Options {
     fn: Function;
     errorLevel?: 0 | 1;
-    userDestructives: Partial<Destructives>;
+    destructives: Partial<Destructives>;
 }
 
 export function chaosify(
@@ -19,7 +19,7 @@ export function chaosify(
     ) {
         fn = optionsOrFn.fn;
         errorLevel = optionsOrFn.errorLevel;
-        userDestructives = optionsOrFn.userDestructives;
+        userDestructives = optionsOrFn.destructives;
     } else {
         fn = optionsOrFn;
         errorLevel = errorLevelArg;

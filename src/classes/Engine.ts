@@ -9,14 +9,13 @@ export default class Engine {
     private readonly destructiveArgs: Array<Array<unknown>> = [];
 
     constructor(
-        private _fn: any,
+        private _fn?: any,
         private _errorLevel: any = 0,
         private _userDestructives: any = {}
     ) {
         typeof _fn !== "undefined" && this.setFn(_fn);
-        typeof _errorLevel !== "undefined" && this.setErrorLevel(_errorLevel);
-        typeof _userDestructives !== "undefined" &&
-            this.setDestructives(_userDestructives);
+        this.setErrorLevel(_errorLevel);
+        this.setDestructives(_userDestructives);
     }
 
     get destructives() {
@@ -28,12 +27,19 @@ export default class Engine {
         return { ...result };
     }
 
-    setDestructives(destructives: Partial<Destructives>) {
-        const result = {};
+    get fn() {
+        return this._fn;
+    }
+
+    get errorLevel() {
+        return this._errorLevel;
+    }
+
+    setDestructives(destructives: { [x: string]: unknown[] }) {
+        const result: { [x: string]: any[] } = {};
         for (const each in destructives) {
-            //@ts-ignore
             const arr = destructives[each];
-            if (Array.isArray(arr)) this._userDestructives[each] = [...arr];
+            if (Array.isArray(arr)) result[each] = [...arr];
             else
                 this.sendError(
                     "Please pass an array of values for each destructive property"
@@ -47,8 +53,8 @@ export default class Engine {
         if (!fn || typeof fn !== "function")
             this.sendError("Chaos Engine expects a function argument");
         else {
-            this._fn = fn;
             this.refresh();
+            this._fn = fn;
         }
         return this;
     }
@@ -69,9 +75,10 @@ export default class Engine {
 
     toTake(argType: unknown, argExample?: unknown) {
         if (typeof this._fn !== "function") {
-            return this.sendError(
+            this.sendError(
                 "You have to set the function before passing its arguments."
             );
+            return this;
         }
         // If only one argument is passed in, make it argExample and deduce its type
         if (typeof argExample === "undefined") {
@@ -80,6 +87,7 @@ export default class Engine {
         }
         if (this.typeCheck(argType, argExample)) {
             this.destructiveArgs.push(this.generateArgs(argType, argExample));
+            this.fnArgs.push(argExample);
         } else {
             this.sendError(
                 `ToTake expects the example ${JSON.stringify(
@@ -87,7 +95,6 @@ export default class Engine {
                 )} to have type ${JSON.stringify(argType)}`
             );
         }
-        this.fnArgs.push(argExample);
         return this;
     }
 
@@ -120,12 +127,23 @@ export default class Engine {
                 "You have to call ToTake method at least once before calling the Run method."
             );
         }
-        if (typeof this._fn !== "function") {
-            return this.sendError(
-                "You have to set the function to run tests on first."
-            );
-        }
+        // Commented out because ToTake method already handles this
+        // if (typeof this._fn !== "function") {
+        //     return this.sendError(
+        //         "You have to set the function to run tests on first."
+        //     );
+        // }
         return this.startTesting();
+    }
+
+    refresh() {
+        this.fnReturnValue = undefined;
+        this.fnReturnType = undefined;
+        this.fnArgs.length = 0;
+        this.destructiveArgs.length = 0;
+        this._fn = undefined;
+        this._userDestructives = {};
+        this._errorLevel = 0;
     }
 
     private generateArgs(argType: unknown, argExample?: unknown) {
@@ -133,7 +151,13 @@ export default class Engine {
     }
 
     private startTesting() {
-        const results = [];
+        const results: {
+            error: boolean;
+            output: unknown;
+            timeTaken: string;
+            inputs: unknown[];
+            matchedReturnType?: boolean;
+        }[] = [];
         for (let i = 0; i < this.destructiveArgs.length; i++) {
             const destructiveArgs = [...this.destructiveArgs[i]];
             for (let j = 0; j < destructiveArgs.length; j++) {
@@ -150,7 +174,6 @@ export default class Engine {
     }
 
     private typeCheck(type: any, example: any) {
-        let flag = false;
         if (typeof type === "undefined" || typeof example === "undefined")
             return false;
         if (typeof type === "string") {
@@ -233,12 +256,5 @@ export default class Engine {
         return this._errorLevel === 1
             ? returnError(message)
             : throwError(message);
-    }
-
-    private refresh() {
-        this.fnReturnValue = undefined;
-        this.fnReturnType = undefined;
-        this.fnArgs.length = 0;
-        this.destructiveArgs.length = 0;
     }
 }
