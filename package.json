@@ -1,0 +1,39 @@
+{
+    "name": "chaos-engine",
+    "version": "1.0.0",
+    "description": "For running destructive tests on functions",
+    "main": "./lib",
+    "types": "./lib/index.d.ts",
+    "devDependencies": {
+        "@babel/core": "^7.13.15",
+        "@babel/preset-env": "^7.13.15",
+        "@babel/preset-typescript": "^7.13.0",
+        "@types/jest": "^26.0.22",
+        "babel-jest": "^26.6.3",
+        "jest": "^26.6.3",
+        "ts-node": "^9.1.1",
+        "typescript": "^4.2.4"
+    },
+    "scripts": {
+        "test": "jest --coverage",
+        "test:watch": "jest --watch",
+        "compile": "rm -rf lib && tsc",
+        "push:publish": "npm run compile && git push && npm publish --access=public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/La-BeTe/Chaos-Engine.git"
+    },
+    "keywords": [
+        "destructive",
+        "chaos",
+        "engine",
+        "test"
+    ],
+    "author": "La-BeTe",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/La-BeTe/Chaos-Engine/issues"
+    },
+    "homepage": "https://github.com/La-BeTe/Chaos-Engine#readme"
+}
