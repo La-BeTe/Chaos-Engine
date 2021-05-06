@@ -1,6 +1,6 @@
 {
-    "name": "chaos-engine",
-    "version": "1.0.0",
+    "name": "@la-bete/chaos-engine",
+    "version": "1.0.2",
     "description": "For running destructive tests on functions",
     "main": "./lib",
     "types": "./lib/index.d.ts",
@@ -35,5 +35,8 @@
     "bugs": {
         "url": "https://github.com/La-BeTe/Chaos-Engine/issues"
     },
-    "homepage": "https://github.com/La-BeTe/Chaos-Engine#readme"
+    "homepage": "https://github.com/La-BeTe/Chaos-Engine#readme",
+    "files": [
+        "lib"
+    ]
 }

@@ -36,9 +36,10 @@ export default function generateArgs(
                 userDestructives[prop]
             );
         } else {
-            returnError(
-                `The values of the ${prop} property in the Destructives object must be an array, using defaults...`
-            );
+            if (userDestructives[prop])
+                returnError(
+                    `The values of the ${prop} property in the Destructives object must be an array, using defaults...`
+                );
             //@ts-ignore
             destructives[prop] = [...destructiveArgs[prop]];
         }
