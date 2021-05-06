@@ -1,4 +1,4 @@
-import { chaosify } from "../../src";
+import { chaos } from "../../src";
 import { ChaosError } from "../../src/classes/Error";
 import ChaosEngine from "../../src/classes/Engine";
 
@@ -24,16 +24,16 @@ describe("Chaos Engine", () => {
 
     it("should accept only functions and return a new Chaos Engine", () => {
         //@ts-ignore
-        expect(() => chaosify("")).toThrowError(ChaosError);
+        expect(() => chaos("")).toThrowError(ChaosError);
         //@ts-ignore
-        expect(() => chaosify(1)).toThrow(ChaosError);
-        expect(() => chaosify(sum)).not.toThrow();
-        expect(chaosify(sum)).toBeInstanceOf(ChaosEngine);
+        expect(() => chaos(1)).toThrow(ChaosError);
+        expect(() => chaos(sum)).not.toThrow();
+        expect(chaos(sum)).toBeInstanceOf(ChaosEngine);
     });
 
     it("should accept errorLevel and custom destructives from user", () => {
-        expect(() => new ChaosEngine(sum, 0, customDestructives)).not.toThrow();
-        const chaosEngine = new ChaosEngine(sum, 0, customDestructives);
+        expect(() => chaos(sum, 0, customDestructives)).not.toThrow();
+        const chaosEngine = chaos(sum, 0, customDestructives);
         expect(chaosEngine).toBeInstanceOf(ChaosEngine);
         expect(chaosEngine.destructives).toStrictEqual(customDestructives);
         expect(chaosEngine.fn).toEqual(sum);
@@ -42,13 +42,13 @@ describe("Chaos Engine", () => {
 
     it("should also accept objects", () => {
         expect(() =>
-            chaosify({
+            chaos({
                 fn: sum,
                 errorLevel: 0,
                 destructives: customDestructives
             })
         ).not.toThrow();
-        const chaosEngine = chaosify({
+        const chaosEngine = chaos({
             fn: sum,
             errorLevel: 0,
             destructives: customDestructives

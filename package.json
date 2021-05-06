@@ -1,6 +1,6 @@
 {
     "name": "@la-bete/chaos-engine",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "description": "For running destructive tests on functions",
     "main": "./lib",
     "types": "./lib/index.d.ts",
@@ -38,5 +38,12 @@
     "homepage": "https://github.com/La-BeTe/Chaos-Engine#readme",
     "files": [
         "lib"
-    ]
+    ],
+    "bin": {
+        "chaos": "./lib/cli.js"
+    },
+    "dependencies": {
+        "cli-table3": "^0.6.0",
+        "yargs": "^17.0.1"
+    }
 }

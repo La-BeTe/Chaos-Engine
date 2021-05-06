@@ -1,6 +1,14 @@
 import generateArgs from "../helpers/generateArgs";
 import { throwError, returnError } from "./Error";
-import { Destructives } from "../helpers/utilities";
+import { destructiveArgs } from "../helpers/utilities";
+
+export interface Result {
+    matchedReturnType?: boolean | undefined;
+    error: boolean;
+    output: unknown;
+    timeTaken: string;
+    inputs: unknown[];
+}
 
 export default class Engine {
     private fnReturnValue: unknown;
@@ -16,6 +24,10 @@ export default class Engine {
         typeof _fn !== "undefined" && this.setFn(_fn);
         this.setErrorLevel(_errorLevel);
         this.setDestructives(_userDestructives);
+    }
+
+    get defaultDestructives() {
+        return { ...destructiveArgs };
     }
 
     get destructives() {
@@ -37,12 +49,22 @@ export default class Engine {
 
     setDestructives(destructives: { [x: string]: unknown[] }) {
         const result: { [x: string]: any[] } = {};
+        if (typeof destructives !== "object") {
+            this.sendError(
+                `Expected an object arument for setDestructives method, got '${JSON.stringify(
+                    destructives
+                )}'`
+            );
+            destructives = {};
+        }
         for (const each in destructives) {
             const arr = destructives[each];
             if (Array.isArray(arr)) result[each] = [...arr];
             else
                 this.sendError(
-                    "Please pass an array of values for each destructive property"
+                    `Expected an array for each destructive property, got '${JSON.stringify(
+                        arr
+                    )}'`
                 );
         }
         this._userDestructives = { ...result };
@@ -80,21 +102,27 @@ export default class Engine {
             );
             return this;
         }
-        // If only one argument is passed in, make it argExample and deduce its type
-        if (typeof argExample === "undefined") {
-            argExample = argType;
-            argType = this.buildType(argExample);
-        }
-        if (this.typeCheck(argType, argExample)) {
-            this.destructiveArgs.push(this.generateArgs(argType, argExample));
-            this.fnArgs.push(argExample);
+        if (typeof argType === "undefined") {
+            this.sendError("ToTake method requires between 1-2 arguments");
         } else {
-            this.sendError(
-                `ToTake expects the example ${JSON.stringify(
-                    argExample
-                )} to have type ${JSON.stringify(argType)}`
-            );
+            if (typeof argExample === "undefined") {
+                argExample = argType;
+                argType = this.buildType(argExample);
+            }
+            if (this.typeCheck(argType, argExample)) {
+                this.destructiveArgs.push(
+                    this.generateArgs(argType, argExample)
+                );
+                this.fnArgs.push(argExample);
+            } else {
+                this.sendError(
+                    `ToTake expects the example ${JSON.stringify(
+                        argExample
+                    )} to have type ${JSON.stringify(argType)}`
+                );
+            }
         }
+        // If only one argument is passed in, make it argExample and deduce its type
         return this;
     }
 
@@ -104,19 +132,23 @@ export default class Engine {
                 "You have to set the function before passing a return value."
             );
         }
-        if (typeof returnExample === "undefined") {
-            returnExample = returnType;
-            returnType = this.buildType(returnExample);
-        }
-        if (this.typeCheck(returnType, returnExample)) {
-            this.fnReturnValue = returnExample;
-            this.fnReturnType = returnType;
+        if (typeof returnType === "undefined") {
+            this.sendError("ToReturn method requires between 1-2 arguments");
         } else {
-            this.sendError(
-                `ToReturn expects the example ${JSON.stringify(
-                    returnExample
-                )} to have type ${JSON.stringify(returnType)}`
-            );
+            if (typeof returnExample === "undefined") {
+                returnExample = returnType;
+                returnType = this.buildType(returnExample);
+            }
+            if (this.typeCheck(returnType, returnExample)) {
+                this.fnReturnValue = returnExample;
+                this.fnReturnType = returnType;
+            } else {
+                this.sendError(
+                    `ToReturn expects the example ${JSON.stringify(
+                        returnExample
+                    )} to have type ${JSON.stringify(returnType)}`
+                );
+            }
         }
         return this.run();
     }
@@ -127,12 +159,6 @@ export default class Engine {
                 "You have to call ToTake method at least once before calling the Run method."
             );
         }
-        // Commented out because ToTake method already handles this
-        // if (typeof this._fn !== "function") {
-        //     return this.sendError(
-        //         "You have to set the function to run tests on first."
-        //     );
-        // }
         return this.startTesting();
     }
 
@@ -144,6 +170,7 @@ export default class Engine {
         this._fn = undefined;
         this._userDestructives = {};
         this._errorLevel = 0;
+        return this;
     }
 
     private generateArgs(argType: unknown, argExample?: unknown) {
@@ -151,13 +178,7 @@ export default class Engine {
     }
 
     private startTesting() {
-        const results: {
-            error: boolean;
-            output: unknown;
-            timeTaken: string;
-            inputs: unknown[];
-            matchedReturnType?: boolean;
-        }[] = [];
+        const results: Result[] = [];
         for (let i = 0; i < this.destructiveArgs.length; i++) {
             const destructiveArgs = [...this.destructiveArgs[i]];
             for (let j = 0; j < destructiveArgs.length; j++) {
@@ -225,7 +246,7 @@ export default class Engine {
         return type;
     }
 
-    private runTest(...args: unknown[]) {
+    private runTest(...args: unknown[]): Result {
         let error: boolean, response: any;
         const start = Date.now();
         try {
@@ -245,9 +266,9 @@ export default class Engine {
         }
         return {
             error,
+            inputs: args,
             output: response,
             timeTaken: end - start + "ms",
-            inputs: args,
             ...result
         };
     }

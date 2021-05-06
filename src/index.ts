@@ -7,7 +7,7 @@ interface Options {
     destructives: Partial<Destructives>;
 }
 
-export function chaosify(
+export function chaos(
     optionsOrFn?: Options | Options["fn"],
     errorLevelArg?: Options["errorLevel"],
     userDestructivesArg?: Partial<Destructives>
