@@ -122,3 +122,68 @@ The `run` method starts the process of testing and would not work if `toTake` ha
 #### refresh
 
 The `refresh` method clears and resets the ChaosEngine instance. After calling this, you have to set up the instance again. It is called by `setFn` internally, so args for one `testFn` are not carried over to the new `testFn`.
+
+## CLI
+
+### Installation
+
+```
+$ npm install @la-bete/chaos-engine -g
+```
+
+### Usage
+
+```
+$ chaos
+```
+
+Calling `chaos` like above will cause the Chaos CLI tool to search for `chaos.config.js` in the current directory for configuration options. You can also call it like below to pass a custom config file:
+
+```
+$ chaos --config=destructiveTestsConfig.js
+```
+
+The config file should export an object with fields as specified below.
+
+### Files
+
+-   This field is required in the config file and should be an object.
+-   The `files` object should have keys specifying the location of the file to run tests on relative to the config file.
+-   Each key should have an object value that specifies the inputs, output, errorLevel and destructives to run the test with.
+-   The `inputs` field is required and correlates with the arguments the `testFn` should take and should be an array.
+-   The `output` specifies an example of the expected return value.
+-   The `errorLevel` specifies the `errorLevel` when running tests on that particular file, while `destructives` are custom destructives that can be used during the tests if supplied.
+
+### Error Level
+
+-   This field represents the fallback error level if none is passed for a particular file we're running tests on
+
+### Destructives
+
+-   This field also represents fallback custom destructives to be used if none is passed for a specific file.
+
+A typical config example can be found below:
+
+```javascript
+module.exports = {
+    files: {
+        "sum.js": {
+            inputs: [2, 3],
+            output: 5,
+            errorLevel: 0
+        },
+        "src/concat.js": {
+            inputs: ["hello", "world"],
+            output: "helloworld",
+            destructives: {
+                string: [NaN, Infinity, {}]
+            }
+        }
+    },
+    errorLevel: 1,
+    destructives: {
+        number: [NaN, "    "],
+        string: [{}, []]
+    }
+};
+```

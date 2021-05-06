@@ -1,6 +1,7 @@
 export class ChaosError extends Error {
-    constructor(message: string) {
+    constructor(message: string, stack?: string) {
         super(message);
+        if (stack) this.stack = stack;
     }
     toJSON() {
         return {
@@ -11,8 +12,8 @@ export class ChaosError extends Error {
     }
 }
 
-export function throwError(message: string): never {
-    throw new ChaosError(message);
+export function throwError(message: string, stack?: string): never {
+    throw new ChaosError(message, stack);
 }
 
 export function returnError(message: string) {

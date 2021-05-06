@@ -6,7 +6,6 @@ import { Result } from "./classes/Engine";
 import { throwError } from "./classes/Error";
 import Table from "cli-table3";
 import yargs from "yargs";
-//@ts-ignore
 import { hideBin } from "yargs/helpers";
 
 const argv = yargs(hideBin(process.argv)).argv;
@@ -32,11 +31,11 @@ function handleTests({ files, errorLevel, destructives }: Config) {
     for (const fileName in files) {
         let fn: Function;
         try {
-            // resolve files relative to the location of chaos config
-            fn = require(fileName);
+            fn = require(resolve(fileName));
         } catch (e) {
             throwError(
-                `Failed to import ${fileName}, \nCaught error: ${e.message}`
+                `Failed to import ${fileName}, \nCaught error: ${e.message}`,
+                e.stack
             );
         }
         const fileObj = files[fileName];
@@ -115,7 +114,8 @@ function main() {
             throw new Error("Config Destructives property is not an object");
     } catch (e) {
         throwError(
-            `Failed to parse config from ${configFile}, \nCaught error: ${e.message}`
+            `Failed to parse config from ${configFile}, \nCaught error: ${e.message}`,
+            e.stack
         );
     }
     handleTests({ files, destructives, errorLevel });
