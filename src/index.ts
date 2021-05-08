@@ -1,5 +1,5 @@
 import Engine from "./classes/Engine";
-import { Destructives } from "./helpers/utilities";
+import { Destructives, isValidObject } from "./helpers/utilities";
 
 interface Options {
     fn: Function;
@@ -13,13 +13,10 @@ export function chaos(
     userDestructivesArg?: Partial<Destructives>
 ) {
     let fn, errorLevel, userDestructives;
-    if (
-        typeof optionsOrFn === "object" &&
-        optionsOrFn.constructor.name === "Object"
-    ) {
-        fn = optionsOrFn.fn;
-        errorLevel = optionsOrFn.errorLevel;
-        userDestructives = optionsOrFn.destructives;
+    if (isValidObject(optionsOrFn)) {
+        fn = (optionsOrFn as Options).fn;
+        errorLevel = (optionsOrFn as Options).errorLevel;
+        userDestructives = (optionsOrFn as Options).destructives;
     } else {
         fn = optionsOrFn;
         errorLevel = errorLevelArg;

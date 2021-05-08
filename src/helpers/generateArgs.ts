@@ -1,23 +1,5 @@
-import { Destructives, destructiveArgs } from "./utilities";
+import { Destructives, destructiveArgs, isValidObject } from "./utilities";
 import { returnError } from "../classes/Error";
-
-// function isPrimitive(argType: string) {
-//     // return ["string", "number", "boolean", "bigint", "symbol"].includes(argType);
-//     // We would work on more types later
-//     return ["string", "number", "boolean"].includes(argType);
-// }
-
-// function isValidNumber(
-//     num: unknown,
-//     shouldBeGreaterThan = 0,
-//     shouldBeLessThan = Math.pow(2, 52)
-// ) {
-//     return (
-//         typeof num === "number" &&
-//         num > shouldBeGreaterThan &&
-//         num < shouldBeLessThan
-//     );
-// }
 
 export default function generateArgs(
     argType: unknown,
@@ -63,13 +45,9 @@ export default function generateArgs(
                 destructives[argTypeTrimmed]
             );
         }
-    } else if (
-        argType &&
-        typeof argType === "object" &&
-        argType.constructor.name === "Object"
-    ) {
+    } else if (isValidObject(argType)) {
         destructiveArgsArr = destructiveArgsArr.concat(destructives.object);
-        for (const prop in argType) {
+        for (const prop in argType as object) {
             // @ts-ignore
             const args = generateArgs(argType[prop], argExample[prop]);
             args.forEach((arg) => {

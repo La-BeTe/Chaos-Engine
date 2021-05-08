@@ -1,6 +1,6 @@
-import { chaos } from "../../src";
-import { ChaosError } from "../../src/classes/Error";
-import ChaosEngine from "../../src/classes/Engine";
+import { chaos } from "../src";
+import { ChaosError } from "../src/classes/Error";
+import ChaosEngine from "../src/classes/Engine";
 
 function sum(a: number, b: number) {
     return a + b;

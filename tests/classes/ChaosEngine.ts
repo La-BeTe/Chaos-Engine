@@ -92,9 +92,6 @@ describe("Chaos Engine", () => {
         expect(() => chaosEngine.toTake("number", 3)).toThrowError(
             "You have to set the function before passing its arguments."
         );
-        expect(chaosEngine.setErrorLevel(1).toTake("number", 2)).toStrictEqual(
-            chaosEngine
-        );
         chaosEngine.setFn(sum);
         expect(() => chaosEngine.toTake("number", 3)).not.toThrow();
     });
@@ -239,6 +236,13 @@ describe("Chaos Engine", () => {
         const chaosEngine = new ChaosEngine(sum, 1, customDestructives);
         //@ts-ignore
         expect(() => chaosEngine.setFn(23)).not.toThrowError(
+            "Chaos Engine expects a function argument"
+        );
+    });
+    it("should throw error if errorLevel is set to 0", () => {
+        const chaosEngine = new ChaosEngine(sum, 0, customDestructives);
+        //@ts-ignore
+        expect(() => chaosEngine.setFn(23)).toThrowError(
             "Chaos Engine expects a function argument"
         );
     });

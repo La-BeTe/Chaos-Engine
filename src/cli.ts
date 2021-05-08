@@ -1,28 +1,30 @@
 #!/usr/bin/env node
 
-import { basename, resolve } from "path";
-import { chaos } from "./";
-import { Result } from "./classes/Engine";
-import { throwError } from "./classes/Error";
+import { basename, resolve, dirname } from "path";
 import Table from "cli-table3";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { chaos } from "./";
+import { isValidObject } from "./helpers/utilities";
+import { Result } from "./classes/Engine";
+import { throwError } from "./classes/Error";
 
 const argv = yargs(hideBin(process.argv)).argv;
+const configLocation = argv.config ? String(argv.config) : "chaos.config.js";
 
 interface Config {
     files: {
         [x: string]: {
             inputs: unknown[];
-            output: unknown;
-            errorLevel: number;
-            destructives: {
+            output?: unknown;
+            errorLevel?: 0 | 1;
+            destructives?: {
                 [x: string]: unknown[];
             };
         };
     };
-    errorLevel: number;
-    destructives: {
+    errorLevel?: 0 | 1;
+    destructives?: {
         [y: string]: unknown[];
     };
 }
@@ -31,75 +33,73 @@ function handleTests({ files, errorLevel, destructives }: Config) {
     for (const fileName in files) {
         let fn: Function;
         try {
-            fn = require(resolve(fileName));
+            const fileLocation = resolve(dirname(configLocation), fileName);
+            fn = require(fileLocation);
         } catch (e) {
             throwError(
                 `Failed to import ${fileName}, \nCaught error: ${e.message}`,
                 e.stack
             );
         }
+        if (typeof fn !== "function")
+            throwError(
+                `The file ${basename(fileName)} does not export a function`
+            );
         const fileObj = files[fileName];
-        if (
-            !fileObj ||
-            typeof fileObj !== "object" ||
-            fileObj.constructor.name !== "Object"
-        )
-            throw new Error(
+        if (!isValidObject(fileObj))
+            throwError(
                 `The ${fileName} property in the config is not an object`
             );
         let errorLevelArg: Config["errorLevel"] = errorLevel;
         let destructivesArg: Config["destructives"] = { ...destructives };
 
-        if (fileObj.errorLevel) errorLevel = fileObj.errorLevel;
-
+        if (fileObj.errorLevel) errorLevelArg = fileObj.errorLevel;
         if (fileObj.destructives) destructivesArg = { ...fileObj.destructives };
 
         const args = fileObj.inputs;
         if (!args || !Array.isArray(args) || args.length < 1)
             throwError(`Invalid inputs passed in for file '${fileName}'`);
-        const chaosEngine = chaos(fn, errorLevelArg as 0 | 1, destructivesArg);
+        const chaosEngine = chaos(fn, errorLevelArg, destructivesArg);
         for (const arg of args) {
             chaosEngine.toTake(arg);
         }
-
-        let result: { status: string; data?: Result[] };
         if (fileObj.output) {
-            result = chaosEngine.toReturn(fileObj.output);
-        } else {
-            result = chaosEngine.run();
+            chaosEngine.toReturn(fileObj.output);
         }
-        if (result.data && result.status === "success") {
-            const errorLogging = buildTable(fileName, result.data);
+        const result: {
+            status: string;
+            data?: Result[];
+            message?: string;
+        } = chaosEngine.run();
+
+        if (result.data) {
+            console.log(
+                `                   File Name ==> ${basename(fileName)}`
+            );
+            const errorLogging = buildTable(result.data);
             if (errorLogging !== "")
                 throwError(
                     `Failed to log to table, \nCaught error: ${errorLogging}`
                 );
-        } else {
-            console.log({ result });
-            throwError(`Test failed`);
+        } else if (result.message) {
+            throwError(result.message);
         }
     }
 }
 
 function main() {
-    let configFile: string = "chaos.config.js";
-    let config: Config;
-    if (argv.config) configFile = argv.config as string;
-    let files: Config["files"],
+    let config: Config,
+        files: Config["files"],
         errorLevel: Config["errorLevel"],
         destructives: Config["destructives"];
     try {
-        config = require(resolve(configFile));
+        config = require(resolve(configLocation));
         if (typeof config !== "object")
             throw new Error("Config is not an object");
         files = config.files;
         errorLevel = config.errorLevel || 0;
         destructives = config.destructives || {};
-        if (
-            !files ||
-            typeof files !== "object" ||
-            files.constructor.name !== "Object"
-        )
+        if (!isValidObject(files))
             throw new Error("Config Files property is not an object");
         if (errorLevel !== 0 && errorLevel !== 1) {
             console.log(
@@ -107,33 +107,28 @@ function main() {
             );
             errorLevel = 0;
         }
-        if (
-            typeof destructives !== "object" ||
-            destructives.constructor.name !== "Object"
-        )
+        if (!isValidObject(destructives))
             throw new Error("Config Destructives property is not an object");
     } catch (e) {
         throwError(
-            `Failed to parse config from ${configFile}, \nCaught error: ${e.message}`,
+            `Failed to parse config from ${configLocation}, \nCaught error: ${e.message}`,
             e.stack
         );
     }
     handleTests({ files, destructives, errorLevel });
 }
 
-function buildTable(fileName: string, results: Result[]) {
+function buildTable(results: Result[]) {
     try {
         const headings: string[] = [];
         Object.keys(results[0]).forEach((str) => {
-            let normStr = str
-                .toLowerCase()
-                .replace(str[0], str[0].toUpperCase());
+            let normStr = str.replace(str[0], str[0].toUpperCase());
             if (normStr !== "Error") {
                 headings.push(normStr);
             }
         });
         const table = new Table({
-            head: ["FileName", ...headings],
+            head: [...headings],
             chars: {
                 top: "═",
                 "top-mid": "╤",
@@ -163,7 +158,7 @@ function buildTable(fileName: string, results: Result[]) {
                 }
                 if (entry.toLowerCase() !== "error") entries.push(jsonEntry);
             });
-            table.push([basename(fileName), ...entries]);
+            table.push([...entries]);
         }
         console.log(table.toString());
         return "";

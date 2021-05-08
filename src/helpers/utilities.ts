@@ -28,3 +28,11 @@ export const destructiveArgs: Destructives = {
 
     generals: [null, undefined]
 };
+
+export function isValidObject(obj: unknown) {
+    return !!(
+        typeof obj === "object" &&
+        obj &&
+        obj.constructor.name === "Object"
+    );
+}

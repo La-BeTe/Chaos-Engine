@@ -1,9 +1,9 @@
 import generateArgs from "../helpers/generateArgs";
 import { throwError, returnError } from "./Error";
-import { destructiveArgs } from "../helpers/utilities";
+import { destructiveArgs, isValidObject } from "../helpers/utilities";
 
 export interface Result {
-    matchedReturnType?: boolean | undefined;
+    matchedReturnType?: boolean;
     error: boolean;
     output: unknown;
     timeTaken: string;
@@ -27,14 +27,20 @@ export default class Engine {
     }
 
     get defaultDestructives() {
-        return { ...destructiveArgs };
+        const result: { [x: string]: any[] } = {};
+        for (const each in destructiveArgs) {
+            //@ts-ignore
+            const args = destructiveArgs[each];
+            if (Array.isArray(args)) result[each] = [...args];
+        }
+        return { ...result };
     }
 
     get destructives() {
         const result: { [x: string]: any[] } = {};
         for (const each in this._userDestructives) {
             if (Array.isArray(this._userDestructives[each]))
-                result[each] = this._userDestructives[each];
+                result[each] = [...this._userDestructives[each]];
         }
         return { ...result };
     }
@@ -49,9 +55,9 @@ export default class Engine {
 
     setDestructives(destructives: { [x: string]: unknown[] }) {
         const result: { [x: string]: any[] } = {};
-        if (typeof destructives !== "object") {
+        if (!this.validateObject(destructives)) {
             this.sendError(
-                `Expected an object arument for setDestructives method, got '${JSON.stringify(
+                `Expected an object argument for setDestructives method, got '${JSON.stringify(
                     destructives
                 )}'`
             );
@@ -82,7 +88,7 @@ export default class Engine {
     }
 
     setErrorLevel(errorLevel: 0 | 1) {
-        if (errorLevel !== this._errorLevel) {
+        if (errorLevel !== this.errorLevel) {
             if (errorLevel === 1) this._errorLevel = 1;
             else {
                 if (errorLevel !== 0)
@@ -96,7 +102,7 @@ export default class Engine {
     }
 
     toTake(argType: unknown, argExample?: unknown) {
-        if (typeof this._fn !== "function") {
+        if (typeof this.fn !== "function") {
             this.sendError(
                 "You have to set the function before passing its arguments."
             );
@@ -122,12 +128,11 @@ export default class Engine {
                 );
             }
         }
-        // If only one argument is passed in, make it argExample and deduce its type
         return this;
     }
 
     toReturn(returnType: unknown, returnExample?: unknown) {
-        if (typeof this._fn !== "function") {
+        if (typeof this.fn !== "function") {
             return this.sendError(
                 "You have to set the function before passing a return value."
             );
@@ -205,18 +210,17 @@ export default class Engine {
                 }
             } else {
                 type = type.trim();
-                const entryInUserDestructives =
-                    this._userDestructives && this._userDestructives[type];
+                const customEntryInUserDestructives =
+                    this.destructives && this.destructives[type];
+                const isAnUnknownType = !this.defaultDestructives[type];
                 return (
-                    (entryInUserDestructives &&
-                        Array.isArray(entryInUserDestructives)) ||
+                    (isAnUnknownType &&
+                        customEntryInUserDestructives &&
+                        Array.isArray(customEntryInUserDestructives)) ||
                     typeof example === type
                 );
             }
-        } else if (
-            typeof type === "object" &&
-            type.constructor.name === "Object"
-        ) {
+        } else if (this.validateObject(type)) {
             for (const prop in type) {
                 if (!this.typeCheck(type[prop], example[prop])) return false;
             }
@@ -230,11 +234,7 @@ export default class Engine {
         if (typeof example === "undefined")
             return this.sendError("BuildType method requires an argument");
         if (typeof example !== "object") type = typeof example;
-        else if (
-            example &&
-            typeof example === "object" &&
-            example.constructor.name === "Object"
-        ) {
+        else if (this.validateObject(example)) {
             type = {};
             for (const prop in example) {
                 //@ts-ignore
@@ -250,7 +250,7 @@ export default class Engine {
         let error: boolean, response: any;
         const start = Date.now();
         try {
-            response = this._fn(...args);
+            response = this.fn(...args);
             error = false;
         } catch (e) {
             error = true;
@@ -258,11 +258,12 @@ export default class Engine {
         }
         const end = Date.now();
         const result: { matchedReturnType?: boolean } = {};
-        if (!error && this.fnReturnValue) {
+        if (this.fnReturnValue) {
             result.matchedReturnType = this.typeCheck(
                 this.fnReturnType,
                 response
             );
+            if (error) result.matchedReturnType = false;
         }
         return {
             error,
@@ -274,8 +275,12 @@ export default class Engine {
     }
 
     private sendError(message: string) {
-        return this._errorLevel === 1
+        return this.errorLevel === 1
             ? returnError(message)
             : throwError(message);
+    }
+
+    private validateObject(obj: unknown) {
+        return isValidObject(obj);
     }
 }

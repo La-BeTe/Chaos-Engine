@@ -6,8 +6,7 @@ export class ChaosError extends Error {
     toJSON() {
         return {
             status: "error",
-            message: this.message,
-            stack: this.stack
+            message: this.message
         };
     }
 }
