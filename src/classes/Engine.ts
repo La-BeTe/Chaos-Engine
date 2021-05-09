@@ -296,7 +296,7 @@ export default class Engine {
                     .then((response: unknown) => {
                         const end = Date.now();
                         const result: { matchedReturnType?: boolean } = {};
-                        if (this.fnReturnValue) {
+                        if (typeof this.fnReturnValue !== "undefined") {
                             result.matchedReturnType = this.typeCheck(
                                 this.fnReturnType,
                                 response
@@ -336,7 +336,7 @@ export default class Engine {
             }
             const end = Date.now();
             const result: { matchedReturnType?: boolean } = {};
-            if (this.fnReturnValue) {
+            if (typeof this.fnReturnValue !== "undefined") {
                 result.matchedReturnType = this.typeCheck(
                     this.fnReturnType,
                     response

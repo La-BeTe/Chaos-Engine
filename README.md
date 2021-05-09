@@ -38,8 +38,8 @@ const result = chaosEngine.run();
 The `setFn` method can be used to set the `testFn` associated with this Engine instance. It also calls the `refresh` method internally. You can also get the current `testFn` by accessing the `fn` property on the instance.
 
 ```javascript
-const chaosEngine = chaos();         // chaosEngine.fn => undefined
-chaosEngine.setFn(sum);              // chaosEngine.fn => sum
+const chaosEngine = chaos(); // chaosEngine.fn => undefined
+chaosEngine.setFn(sum); // chaosEngine.fn => sum
 ```
 
 #### setErrorLevel
@@ -47,27 +47,25 @@ chaosEngine.setFn(sum);              // chaosEngine.fn => sum
 The `setErrorLevel` method can be used to set the `errorLevel`. This determines if encountered errors are thrown or logged. The default value is 0 and can only be set to 0 or 1. You can also get the current `errorLevel` by accessing the `errorLevel` property on the instance. An `errorLevel` of 0 causes the Engine instance to throw errors while an `errorLevel` of 1 would log errors to the console.
 
 ```javascript
-const chaosEngine = chaos();                // chaosEngine.errorLevel => 0
-
-chaosEngine.setErrorLevel(1);               // chaosEngine.errorLevel => 1
-
-chaosEngine.setErrorLevel({});              // Invalid errorLevel passed in, it would use the default value instead.
-                                            // chaosEngine.errorLevel => 0
+const chaosEngine = chaos(); // chaosEngine.errorLevel => 0
+chaosEngine.setErrorLevel(1); // chaosEngine.errorLevel => 1
+chaosEngine.setErrorLevel({}); // Invalid errorLevel passed in, it would use the default value instead.
+// chaosEngine.errorLevel => 0
 ```
 
 #### setDestructives
 
-The `setDestructives` method allows custom destructive arguments to be passed in. The inbuilt destructives are available on the `defaultDestructives` property of the instance. Custom destructives can be accessed on the `destructives` property of the instance. Custom destructives must be an object with string keys and array values. If the object passed to setDestructives has keys that are not one of `string`, `number`, `boolean`, `object` or `generals`, custom types can be simulated.The `generals` in the `destructives` are used for all types and are always part of the args used to call `testFn`.
+The `setDestructives` method allows custom destructive arguments to be passed in. The inbuilt destructives are available on the `defaultDestructives` property of the instance. Custom destructives can be accessed on the `destructives` property of the instance. Custom destructives must be an object with string keys and array values. If the object passed to setDestructives has keys that are not one of `string`, `number`, `boolean`, `object` or `generals`, custom types can be simulated.The `generals` array in the `destructives` object are used for all types and are always part of the args used to call `testFn`.
 
 ```javascript
-const chaosEngine = chaos();            // chaosEngine.destructives => {}
-chaosEngine.setDestructives(1);         // Throws or logs an error depending on errorLevel
+const chaosEngine = chaos(); // chaosEngine.destructives => {}
+chaosEngine.setDestructives(1); // Throws or logs an error depending on errorLevel
 chaosEngine.setDestructives({
     string: ["      ", "23"]
-});                                     // chaosEngine.destructives => {string: ["     ", "23"]}
+}); // chaosEngine.destructives => {string: ["     ", "23"]}
 chaosEngine.setDestructives({
-    test: ["      ", "23"]              // Passing this type of key allows you pass a type of "test" to toTake method
-});                                     // chaosEngine.destructives => {test: ["     ", "23"]}
+    test: ["      ", "23"] // Passing this type of key allows you pass a type of "test" to toTake method
+}); // chaosEngine.destructives => {test: ["     ", "23"]}
 ```
 
 #### toTake
@@ -79,8 +77,10 @@ The `toTake` method is used to pass the argument type and example to the ChaosEn
 
 ```javascript
 const chaosEngine = chaos(sum);
-chaosEngine.toTake(4);                           //type of arg is deduced to be "number"
-chaosEngine.toTake("string", "hello");           //arg example is type checked to see if type passed is correct
+chaosEngine.toTake(4);
+//type of arg is deduced to be "number"
+chaosEngine.toTake("string", "hello");
+//arg example is type checked to see if "hello" has type "string"
 chaosEngine.toTake({
     a: 24,
     b: {
@@ -129,30 +129,27 @@ let result;
 function log() {
     console.log("Hello, World");
 }
-const chaosEngine = chaos(log);         // No custom destructives and errorLevel is set to THROW
-chaosEngine.toTake(null);               // Pass null to indicate that the function takes no arguments
-result = chaosEngine.run();             // result will have status of "success" and only destructive arguments
-                                        // in the "generals" and "object" array wiil be used to test the "log" function
+const chaosEngine = chaos(log); // No custom destructives and errorLevel is set to THROW
+chaosEngine.toTake(null); // Pass null to indicate that the function takes no arguments
+result = chaosEngine.run(); // result will have status of "success" and only destructive arguments in the "generals" and "object" array wiil be used to test the "log" function
 
 // Test With A Function That Accepts One Argument
-function returnStringVal(val){
+function returnStringVal(val) {
     return String(val);
 }
 chaosEngine.setFn(returnStringVal);
-chaosEngine.toTake(2).toReturn("2"); 
-result = chaosEngine.run();             // Destructive arguments passed to "returnStringVal" will include "number" and
-                                        // "generals" array members. Since toReturn is called as well, the "matchedReturnType" field will be 
-                                        // present for each test
-async function asyncReturnStringVal(val){
+chaosEngine.toTake(2).toReturn("2");
+result = chaosEngine.run(); // Destructive arguments passed to "returnStringVal" will include "number" and "generals" array members. Since toReturn is called as well, the "matchedReturnType" field will be present for each test
+async function asyncReturnStringVal(val) {
     return String(val);
 }
 chaosEngine.setFn(asyncReturnStringVal);
-chaosEngine.toTake(2).toReturn("2"); 
-chaosEngine.runAsync().then((result)=>{
+chaosEngine.toTake(2).toReturn("2");
+chaosEngine.runAsync().then((result) => {
     /*
      * result would be same as specified for "returnStringVal" above
      */
-})
+});
 ```
 
 ## CLI
