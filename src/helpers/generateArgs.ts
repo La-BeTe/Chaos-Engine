@@ -45,7 +45,7 @@ export default function generateArgs(
                 destructives[argTypeTrimmed]
             );
         }
-    } else if (isValidObject(argType)) {
+    } else if (isValidObject(argType) && isValidObject(argExample)) {
         destructiveArgsArr = destructiveArgsArr.concat(destructives.object);
         for (const prop in argType as object) {
             // @ts-ignore

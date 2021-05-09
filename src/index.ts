@@ -1,16 +1,16 @@
 import Engine from "./classes/Engine";
-import { Destructives, isValidObject } from "./helpers/utilities";
+import { isValidObject } from "./helpers/utilities";
 
 interface Options {
     fn: Function;
     errorLevel?: 0 | 1;
-    destructives: Partial<Destructives>;
+    destructives: { [x: string]: unknown[] };
 }
 
 export function chaos(
     optionsOrFn?: Options | Options["fn"],
     errorLevelArg?: Options["errorLevel"],
-    userDestructivesArg?: Partial<Destructives>
+    userDestructivesArg?: Options["destructives"]
 ) {
     let fn, errorLevel, userDestructives;
     if (isValidObject(optionsOrFn)) {
@@ -22,5 +22,5 @@ export function chaos(
         errorLevel = errorLevelArg;
         userDestructives = userDestructivesArg;
     }
-    return new Engine(fn, errorLevel, userDestructives);
+    return new Engine(fn as Function, errorLevel, userDestructives);
 }
