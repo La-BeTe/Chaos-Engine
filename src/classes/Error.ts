@@ -5,7 +5,7 @@ export class ChaosError extends Error {
     }
     toJSON() {
         return {
-            status: "error",
+            status: "error" as "error",
             message: this.message
         };
     }
@@ -16,7 +16,7 @@ export function throwError(message: string, stack?: string): never {
 }
 
 export function returnError(message: string) {
-    const error = new ChaosError(message).toJSON();
-    console.log(error);
+    const error = new ChaosError(message);
+    console.log(error.toJSON());
     return error;
 }

@@ -29,7 +29,7 @@ export default function generateArgs(
     let destructiveArgsArr: any[] = Array.isArray(destructives.generals)
         ? [...destructives.generals]
         : [];
-    if (typeof argType === "string") {
+    if (argExample && typeof argType === "string") {
         const argTypeTrimmed = argType.trim();
         if (argTypeTrimmed.includes("|")) {
             const argTypeArr = argTypeTrimmed.split("|");

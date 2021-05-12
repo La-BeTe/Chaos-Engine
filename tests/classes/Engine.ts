@@ -92,43 +92,43 @@ describe("Chaos Engine", () => {
 
     it("should have a toTake method that returns the chaosEngine allowing for chaining", () => {
         const chaosEngine = new ChaosEngine(sum);
-        expect(chaosEngine.toTake("number", 3)).toStrictEqual(chaosEngine);
+        expect(chaosEngine.toTake(3, "number")).toStrictEqual(chaosEngine);
         expect(
-            chaosEngine.toTake("number", 5).toTake("number", 7)
+            chaosEngine.toTake(5, "number").toTake(7, "number")
         ).toStrictEqual(chaosEngine);
     });
 
     it("should have a toTake method that throws if the function to be tested has not been set", () => {
         const chaosEngine = new ChaosEngine();
-        expect(() => chaosEngine.toTake("number", 3)).toThrowError(
+        expect(() => chaosEngine.toTake(3, "number")).toThrowError(
             "You have to set the function before passing its arguments."
         );
         chaosEngine.setFn(sum);
-        expect(() => chaosEngine.toTake("number", 3)).not.toThrow();
+        expect(() => chaosEngine.toTake(3, "number")).not.toThrow();
     });
 
     it("should have a toTake method that throws if the type passed in does not match the example", () => {
         const chaosEngine = new ChaosEngine(sum);
-        expect(() => chaosEngine.toTake("number", "hello")).toThrow();
-        expect(() => chaosEngine.toTake("undefined", 24)).toThrow();
-        expect(() => chaosEngine.toTake("undefined", undefined)).not.toThrow();
-        expect(() => chaosEngine.toTake("undefined", null)).toThrow();
-        expect(() => chaosEngine.toTake("test", true)).toThrow();
+        expect(() => chaosEngine.toTake("hello", "number")).toThrow();
+        expect(() => chaosEngine.toTake(24, "undefined")).toThrow();
+        expect(() => chaosEngine.toTake(undefined, "undefined")).not.toThrow();
+        expect(() => chaosEngine.toTake(null, "undefined")).toThrow();
+        expect(() => chaosEngine.toTake(true, "test")).toThrow();
     });
 
     it("should have a toTake method that returns the engine instance if errorLevel is 1 and an error is thrown", () => {
         const chaosEngine = new ChaosEngine(undefined, 1);
-        expect(chaosEngine.toTake("string", 2)).toStrictEqual(chaosEngine);
-        chaosEngine.setFn(sum).setErrorLevel(1);
-        expect(() => chaosEngine.toTake("string", 2)).not.toThrow();
+        expect(chaosEngine.toTake(2, "string")).toStrictEqual(chaosEngine);
+        chaosEngine.setFn(sum).setErrorLevel(1); // Setting error level again because setFn refreshes instance
+        expect(() => chaosEngine.toTake(2, "string")).not.toThrow();
     });
 
     it("should have a toReturn method that returns the Engine instance, allowing for chaining", () => {
         const chaosEngine = new ChaosEngine(sum);
         const result = chaosEngine
-            .toTake("number", 4)
-            .toTake("number", 4)
-            .toReturn("number", 8);
+            .toTake(4, "number")
+            .toTake(4, "number")
+            .toReturn(8, "number");
         expect(result).toStrictEqual(chaosEngine);
     });
 
@@ -143,6 +143,12 @@ describe("Chaos Engine", () => {
             (destructiveArgs.number.length + destructiveArgs.generals.length) *
                 2
         );
+        const log = () => console.log("here");
+        const result2 = chaosEngine.setFn(log).toTake(null).run();
+        expect(result2).toHaveProperty("status", "success");
+        expect(result2).toHaveProperty("data");
+        //@ts-ignore
+        expect(result2.data).toHaveLength(destructiveArgs.generals.length);
     });
 
     it("should also deduce types for object schemas", () => {
@@ -171,9 +177,9 @@ describe("Chaos Engine", () => {
     it("should also work with union types", () => {
         const chaosEngine = new ChaosEngine(sum);
         const result = chaosEngine
-            .toTake("string | number", 4)
-            .toTake("string | number", 4)
-            .toReturn("string | number", 8)
+            .toTake(4, "string | number")
+            .toTake(4, "string | number")
+            .toReturn(8, "string | number")
             .run();
         expect(result).toHaveProperty("status", "success");
         expect(result).toHaveProperty("data");
@@ -188,9 +194,9 @@ describe("Chaos Engine", () => {
 
     it("should throw an error if the type argument to toTake or toReturn does not match the example", () => {
         const chaosEngine = new ChaosEngine(sum);
-        expect(() => chaosEngine.toTake("number", "hello")).toThrow();
+        expect(() => chaosEngine.toTake("hello", "number")).toThrow();
         expect(() =>
-            chaosEngine.toTake("string", "true").toReturn("string", true)
+            chaosEngine.toTake("true", "string").toReturn(true, "string")
         ).toThrow();
     });
 
@@ -205,9 +211,9 @@ describe("Chaos Engine", () => {
         customDestructives.number = [3, 0, 9];
         const chaosEngine = new ChaosEngine(sum, 0, customDestructives);
         const result = chaosEngine
-            .toTake("number", 4)
-            .toTake("number", 4)
-            .toReturn("number", 8)
+            .toTake(4, "number")
+            .toTake(4, "number")
+            .toReturn(8, "number")
             .run();
         expect(result).toHaveProperty("status", "success");
         expect(result).toHaveProperty("data");
@@ -225,9 +231,9 @@ describe("Chaos Engine", () => {
         customDestructives.random = [3, 0, 9];
         const chaosEngine = new ChaosEngine(sum, 0, customDestructives);
         const result = chaosEngine
-            .toTake("number", 4)
-            .toTake("random", 4)
-            .toReturn("number", 8)
+            .toTake(4, "number")
+            .toTake(4, "random")
+            .toReturn(8, "number")
             .run();
         expect(result).toHaveProperty("status", "success");
         expect(result).toHaveProperty("data");
@@ -241,9 +247,9 @@ describe("Chaos Engine", () => {
 
     it("should have a toReturn method that throws or logs errors if the function to be tested has not been set", () => {
         const chaosEngine = new ChaosEngine();
-        expect(() => chaosEngine.toReturn("number", 3)).toThrow();
+        expect(() => chaosEngine.toReturn(3, "number")).toThrow();
         chaosEngine.setFn(sum);
-        expect(() => chaosEngine.toReturn("number", 3)).not.toThrow();
+        expect(() => chaosEngine.toReturn(3, "number")).not.toThrow();
     });
 
     it("should not throw error if errorLevel is set to 1", () => {
@@ -266,7 +272,9 @@ describe("Chaos Engine", () => {
             throw new Error("Test error");
         };
         const chaosEngine = new ChaosEngine(throwingFn);
-        let result = chaosEngine.toTake(null).run();
+        // Error here is cannot find property data on Promise<TestResults>
+        // So I'm setting result to type any
+        let result: any = chaosEngine.toTake(null).run();
         expect(result).toHaveProperty("status", "success");
         expect(
             result.data.every((r) => r.error && r.output === "Test error")
@@ -291,6 +299,18 @@ describe("Chaos Engine", () => {
             .toTake(2)
             .toReturn(4)
             .runAsync();
+        expect(result).toHaveProperty("status", "success");
+        expect(result).toHaveProperty("data");
+        //@ts-ignore
+        expect(result.data).toHaveLength(
+            (destructiveArgs.number.length + destructiveArgs.generals.length) *
+                2
+        );
+    });
+
+    it("should have a run method that can also handle async functions", async () => {
+        const chaosEngine = new ChaosEngine(sumAsync);
+        const result = await chaosEngine.toTake(2).toTake(2).toReturn(4).run();
         expect(result).toHaveProperty("status", "success");
         expect(result).toHaveProperty("data");
         //@ts-ignore

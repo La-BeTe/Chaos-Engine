@@ -1,10 +1,6 @@
 import generateArgs from "../helpers/generateArgs";
 import { throwError, returnError } from "./Error";
-import {
-    destructiveArgs,
-    isValidObject,
-    Destructives
-} from "../helpers/utilities";
+import { destructiveArgs, isValidObject } from "../helpers/utilities";
 
 export interface Result {
     matchedReturnType?: boolean;
@@ -12,6 +8,12 @@ export interface Result {
     output: unknown;
     timeTaken: string;
     inputs: unknown[];
+}
+
+interface TestResults {
+    status: "success" | "error";
+    message?: string;
+    data?: Result[];
 }
 
 export default class Engine {
@@ -105,7 +107,7 @@ export default class Engine {
         return this;
     }
 
-    toTake(argType: unknown, argExample?: unknown) {
+    toTake(argExample: unknown, argType?: unknown) {
         if (typeof this.fn !== "function") {
             this.sendError(
                 "You have to set the function before passing its arguments."
@@ -118,8 +120,7 @@ export default class Engine {
         ) {
             this.sendError("ToTake method requires between 1-2 arguments");
         } else {
-            if (typeof argExample === "undefined") {
-                argExample = argType;
+            if (typeof argType === "undefined") {
                 argType = this.buildType(argExample);
             }
             if (this.typeCheck(argType, argExample)) {
@@ -138,7 +139,7 @@ export default class Engine {
         return this;
     }
 
-    toReturn(returnType: unknown, returnExample?: unknown) {
+    toReturn(returnExample: unknown, returnType?: unknown) {
         if (typeof this.fn !== "function") {
             this.sendError(
                 "You have to set the function before passing a return value."
@@ -151,8 +152,7 @@ export default class Engine {
         ) {
             this.sendError("ToReturn method requires between 1-2 arguments");
         } else {
-            if (typeof returnExample === "undefined") {
-                returnExample = returnType;
+            if (typeof returnType === "undefined") {
                 returnType = this.buildType(returnExample);
             }
             if (this.typeCheck(returnType, returnExample)) {
@@ -169,24 +169,28 @@ export default class Engine {
         return this;
     }
 
-    run(): { status: string; data?: Result[]; message?: string } {
+    run(): TestResults | Promise<TestResults> {
         if (this.fnArgs.length === 0) {
             return this.sendError(
                 "You have to call ToTake method at least once before calling the Run method."
             );
         }
-        const results = this.startTesting(false) as Result[];
-        return {
-            status: "success",
-            data: results
-        };
+        let fnResult: unknown = null;
+        try {
+            fnResult = this.fn && this.fn();
+        } catch (e) {}
+        if (fnResult instanceof Promise) {
+            return this.runAsync();
+        } else {
+            const results = this.startTesting(false) as Result[];
+            return {
+                status: "success",
+                data: results
+            };
+        }
     }
 
-    async runAsync(): Promise<{
-        status: string;
-        data?: Result[];
-        message?: string;
-    }> {
+    async runAsync(): Promise<TestResults> {
         if (this.fnArgs.length === 0) {
             return this.sendError(
                 "You have to call ToTake method at least once before calling the RunAsync method."
@@ -240,8 +244,7 @@ export default class Engine {
     }
 
     private typeCheck(type: any, example: any) {
-        if (typeof type === "undefined" || typeof example === "undefined")
-            return false;
+        if (typeof type === "undefined") return false;
         if (typeof type === "string") {
             if (type.includes("|")) {
                 const typeArr = type.split("|");
@@ -354,9 +357,9 @@ export default class Engine {
     }
 
     private sendError(message: string) {
-        return this.errorLevel === 1
-            ? returnError(message)
-            : throwError(message);
+        const error =
+            this.errorLevel === 1 ? returnError(message) : throwError(message);
+        return error.toJSON();
     }
 
     private validateObject(obj: unknown) {
