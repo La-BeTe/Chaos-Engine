@@ -21,6 +21,7 @@ export default class Engine {
     private fnReturnType: unknown;
     private readonly fnArgs: unknown[] = [];
     private readonly destructiveArgs: Array<Array<unknown>> = [];
+    private isFnAsync = false;
 
     constructor(
         private _fn?: Function,
@@ -89,6 +90,9 @@ export default class Engine {
         else {
             this.refresh();
             this._fn = fn;
+            try {
+                this.isFnAsync = fn() instanceof Promise;
+            } catch (e) {}
         }
         return this;
     }
@@ -175,11 +179,7 @@ export default class Engine {
                 "You have to call ToTake method at least once before calling the Run method."
             );
         }
-        let fnResult: unknown = null;
-        try {
-            fnResult = this.fn && this.fn();
-        } catch (e) {}
-        if (fnResult instanceof Promise) {
+        if (this.isFnAsync) {
             return this.runAsync();
         } else {
             const results = this.startTesting(false) as Result[];
@@ -356,7 +356,7 @@ export default class Engine {
         }
     }
 
-    private sendError(message: string) {
+    protected sendError(message: string) {
         const error =
             this.errorLevel === 1 ? returnError(message) : throwError(message);
         return error.toJSON();

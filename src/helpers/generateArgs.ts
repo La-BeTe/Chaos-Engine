@@ -29,21 +29,24 @@ export default function generateArgs(
     let destructiveArgsArr: any[] = Array.isArray(destructives.generals)
         ? [...destructives.generals]
         : [];
-    if (argExample && typeof argType === "string") {
-        const argTypeTrimmed = argType.trim();
-        if (argTypeTrimmed.includes("|")) {
-            const argTypeArr = argTypeTrimmed.split("|");
-            for (const type of argTypeArr) {
+    if (typeof argType === "string") {
+        // Handle cases of null passed in below which would have type "object"
+        if (argExample !== null) {
+            const argTypeTrimmed = argType.trim();
+            if (argTypeTrimmed.includes("|")) {
+                const argTypeArr = argTypeTrimmed.split("|");
+                for (const type of argTypeArr) {
+                    destructiveArgsArr = destructiveArgsArr.concat(
+                        generateArgs(type, argExample)
+                    );
+                }
+                // @ts-ignore
+            } else if (Array.isArray(destructives[argTypeTrimmed])) {
                 destructiveArgsArr = destructiveArgsArr.concat(
-                    generateArgs(type, argExample)
+                    // @ts-ignore
+                    destructives[argTypeTrimmed]
                 );
             }
-            // @ts-ignore
-        } else if (Array.isArray(destructives[argTypeTrimmed])) {
-            destructiveArgsArr = destructiveArgsArr.concat(
-                // @ts-ignore
-                destructives[argTypeTrimmed]
-            );
         }
     } else if (isValidObject(argType) && isValidObject(argExample)) {
         destructiveArgsArr = destructiveArgsArr.concat(destructives.object);

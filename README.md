@@ -55,7 +55,7 @@ chaosEngine.setErrorLevel({}); // Invalid errorLevel passed in, it would use the
 
 #### setDestructives
 
-The `setDestructives` method allows custom destructive arguments to be passed in. The inbuilt destructives are available on the `defaultDestructives` property of the instance. Custom destructives can be accessed on the `destructives` property of the instance. Custom destructives must be an object with string keys and array values. If the object passed to setDestructives has keys that are not one of `string`, `number`, `boolean`, `object` or `generals`, custom types can be simulated.The `generals` array in the `destructives` object are used for all types and are always part of the args used to call `testFn`.
+The `setDestructives` method allows custom destructive arguments to be passed in, these arguments are passed into `testFn` when running tests in place of the argument examples passed to `toTake`. The inbuilt destructives are available on the `defaultDestructives` property of the instance. Custom destructives can be accessed on the `destructives` property of the instance. Custom destructives must be an object with string keys and array values. If the object passed to setDestructives has keys that are not one of `string`, `number`, `boolean`, `object` or `generals`, custom types can be simulated.The `generals` array in the `destructives` object are used for all types and are always part of the args used to call `testFn`.
 
 ```javascript
 const chaosEngine = chaos(); // chaosEngine.destructives => {}
@@ -65,6 +65,11 @@ chaosEngine.setDestructives(1); // Throws or logs an error depending on errorLev
 chaosEngine.setDestructives({
     string: ["      ", "23"]
 }); // chaosEngine.destructives => {string: ["     ", "23"]}
+
+chaosEngine.setDestructives({
+    generals: ["      ", "23"], // These destructives will be used for all arguments, no matter the type
+    boolean: [1, 0, "", Infinity]
+}); // chaosEngine.destructives => {generals: ["     ", "23"], boolean: [1, 0, "", Infinity]}
 
 chaosEngine.setDestructives({
     test: ["      ", "23"] // Passing this type of key allows you pass a type of "test" to toTake method
@@ -102,8 +107,8 @@ chaosEngine.toTake({
 ```
 
 -   The `typeDeducer` function only deduces types for "string", "number", "boolean" and "object" as shown above.
--   If a particular type is not deducable, the `typeDeducer` returns "object" by default.
--   You can add custom types by ensuring the custom type string is available as a key on the `destructives` property of the instance
+-   If a particular type is not deducable, the `typeDeducer` returns "object" by default(which means only "object" and "generals" args would be passed when testing).
+-   You can add custom types by ensuring the custom type string is available as a key on the `destructives` property of the instance(which means you must have called `setDestructives` with an object containing the custom type as one of its keys).
 
 #### toReturn
 
@@ -111,7 +116,7 @@ The `toReturn` method accepts thesame arguments as `toTake` method and specifies
 
 #### run
 
-The `run` method starts the process of testing and would throw an error if `toTake` had not been called initially. It returns the results of the destructive tests. You can call the `run` method after calling `toReturn` or `toTake` in order to run the tests.
+The `run` method starts the process of testing and would throw an error if `toTake` had not been called initially. It returns the results of the destructive tests. You can call the `run` method after calling `toReturn` or `toTake` in order to run the tests. The `run` method also works for asynchronous functions but if you want to be explicit, use `runAsync` below
 
 #### runAsync
 
@@ -157,7 +162,7 @@ chaosEngine.runAsync().then((result) => {
 
 #### N.B:
 
--   The CLI cannot handle async functions yet
+-   The CLI also works with modules that export `async` functions.
 
 ### Installation
 
@@ -177,6 +182,12 @@ Calling `chaos` like above will cause the Chaos CLI tool to search for `chaos.co
 $ chaos --config=destructiveTestsConfig.js
 ```
 
+### OR
+
+```
+$ chaos --config=/absolute/path/to/config.js
+```
+
 The config file should export an object with fields as specified below. All fields should be in camelCase.
 
 ### Files
@@ -184,34 +195,49 @@ The config file should export an object with fields as specified below. All fiel
 -   This field is required in the config file and should be an object.
 -   The `files` object should have keys specifying the location of the file to run tests on relative to the config file.
 -   Each key should have an object value that specifies the inputs, output, errorLevel and destructives to run the test with.
--   The `inputs` field is required and correlates with examples of arguments the `testFn` should take and should be an array.
--   The `output` specifies an example of the expected return value.
--   The `errorLevel` specifies the `errorLevel` when running tests on that particular file, while `destructives` are custom destructives that can be used during the tests if supplied.
+-   The `inputs` field is required and correlates with examples of arguments the `testFn` should take and should be an array. The `inputs` field could also be an array of arrays, each with length of `2` and the first element corresponding to the arg example, while the second element corresponds to the arg type, in thesame order as passed to `toTake` or `toReturn`.
+-   The `output` specifies an example of the expected return value. It could be a single value, or an array consisting of the return example and return type.
+-   The `errorLevel` specifies the `errorLevel` when running tests on that particular file, while `destructives` are custom destructives that will be used during the tests for this file if supplied.
 
 ### Error Level
 
--   This field represents the fallback error level if none is passed for a particular file we're running tests on
+-   This field represents the fallback error level if none is passed for a particular file we're running tests on. It defaults to `0` which signifies any errors encountered will be thrown.
 
 ### Destructives
 
--   This field also represents fallback custom destructives to be used if none is passed for a specific file.
+-   This field also represents fallback custom destructives to be used if none is passed for a specific file. It defaults to `{}`.
 
 A typical config example can be found below:
 
 ```javascript
 module.exports = {
     files: {
+        "noGoodModule.js": {
+            inputs: [null]
+        },
         "sum.js": {
             inputs: [2, 3],
             output: 5,
             errorLevel: 0
         },
         "src/concat.js": {
-            inputs: ["hello", "world"],
+            inputs: [["hello", "string"], "world"],
             output: "helloworld",
             destructives: {
                 string: [NaN, Infinity, {}]
             }
+        },
+        "dist/addStringToNumber.js": {
+            inputs: [
+                ["13", "string"],
+                [2, "number"]
+            ],
+            output: "15",
+            destructives: {
+                string: ["", "    Infinite   ", {}],
+                number: [{}, Infinity, NaN]
+            },
+            errorLevel: 1
         }
     },
     errorLevel: 1,
